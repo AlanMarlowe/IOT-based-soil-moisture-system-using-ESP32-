@@ -1,0 +1,66 @@
+#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
+#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
+SSD1306Wire  display(0x3C, D2, D1);  //D2=SDK  D1=SCK  As per labeling
+#include "config.h"
+int cnt=0;
+int a1;
+String cr;
+AdafruitIO_Feed *s1 = io.feed("s1");
+
+#define IO_USERNAME  "soilmonitor03"
+#define IO_KEY       "aio_Rtcz36BUBQVlQQDaMwzTMDGY7oEj"
+
+#define WIFI_SSID   "project1"
+#define WIFI_PASS   "project1"
+
+void setup()
+{
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
+  display.init();
+  Serial.begin(9600);
+  while (! Serial);
+  Serial.print("Connecting to Adafruit IO");
+  io.connect();
+
+  while (io.status() < AIO_CONNECTED)
+  {
+    Serial.println(io.statusText());
+    delay(500);
+  }
+  Serial.println("Connected to Adafruit IO");
+
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(2, LOW);
+    delay(200);
+    digitalWrite(2, HIGH);
+    delay(200);
+  }
+}
+
+void loop()
+{
+  io.run();
+  a1 = analogRead(A0);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(0, 0, "SOIL:");
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(0, 40,"              ");
+  display.setFont(ArialMT_Plain_16);
+  
+  cr=String(a1);
+  display.drawString(0,40, cr );
+  display.display();
+  
+  cnt = cnt + 1;
+  delay(1000);
+  display.clear();
+  
+  if (cnt > 15)
+  {
+    cnt = 0;
+    s1-> save(a1);
+  }
+}
